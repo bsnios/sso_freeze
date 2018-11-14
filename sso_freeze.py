@@ -15,30 +15,6 @@ from astropy.time import Time                   #convert between different time 
 from astropy.time import TimeDelta              #add/subtract time intervals 
 from scipy.interpolate import interp1d          #interpolate functions
 
-#filename = "hrcf18609N001_evt2.fits" 
-#filename = "acisf12315N004_evt2.fits" 
-#filename = 'P0801930801PNS003PIEVLI0000.FTZ'
-#object_name = "Jupiter" 
-#obj_id = '599'
-
-#object_name = 'Io'
-#obj_id = '501' 
-
-#object_name = 'Europa'
-#obj_id = '502'
-
-
-#filename = "acisf04466N003_evt2.fits"
-#object_name = "Saturn" 
-#obj_id = '699'
-
-#filename = "acisf00583N003_evt2.fits" 
-#object_name = "Venus"
-#obj_id = "299"
-
-#jpl_id_type = 'majorbody' 
-
-
 if __name__ == "__main__":
     
     #Read inputs from separate file
