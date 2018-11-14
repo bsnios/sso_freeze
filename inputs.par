@@ -1,0 +1,33 @@
+#parameter file
+#lines that begin with '#' are ignored
+#
+#object_name: Venus
+#filename: acisf00583N003_evt2.fits
+#obj_id: 299
+#jpl_id_type: majorbody
+#
+#object_name: Jupiter 
+#filename: hrcf18609N001_evt2.fits 
+#filename: acisf12315N004_evt2.fits 
+#filename: P0801930801PNS003PIEVLI0000.FTZ
+#obj_id: 599
+#jpl_id_type: majorbody
+#
+object_name: Io
+#filename: hrcf18609N001_evt2.fits
+filename: acisf12315N004_evt2.fits
+#filename: P0801930801PNS003PIEVLI0000.FTZ
+obj_id: 501 
+jpl_id_type: majorbody
+#
+#object_name: Europa
+##filename: hrcf18609N001_evt2.fits
+#filename: acisf12315N004_evt2.fits
+#filename: P0801930801PNS003PIEVLI0000.FTZ
+#obj_id: 502
+#jpl_id_type: majorbody
+#
+#object_name: Saturn
+#filename: acisf04466N003_evt2.fits
+#obj_id: 699
+#jpl_id_type: majorbody
