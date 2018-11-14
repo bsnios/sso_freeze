@@ -27,7 +27,6 @@ if __name__ == "__main__":
             key, value = line.split(":")
             inputs[key.strip()] = value.strip()
     input_file.close()
-    print(inputs)
 
     #Read in fits file, including relevant header information
     with fits.open(inputs['filename']) as fitsfile: 

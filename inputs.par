@@ -13,12 +13,12 @@
 #obj_id: 599
 #jpl_id_type: majorbody
 #
-object_name: Io
+#object_name: Io
 #filename: hrcf18609N001_evt2.fits
-filename: acisf12315N004_evt2.fits
+#filename: acisf12315N004_evt2.fits
 #filename: P0801930801PNS003PIEVLI0000.FTZ
-obj_id: 501 
-jpl_id_type: majorbody
+#obj_id: 501 
+#jpl_id_type: majorbody
 #
 #object_name: Europa
 ##filename: hrcf18609N001_evt2.fits
@@ -31,3 +31,9 @@ jpl_id_type: majorbody
 #filename: acisf04466N003_evt2.fits
 #obj_id: 699
 #jpl_id_type: majorbody
+#
+object_name: Uranus
+#filename: ./input_files/hrcf20847N001_evt2.fits
+filename: ./input_files/hrcf20846N001_evt2.fits
+obj_id: 799
+jpl_id_type: majorbody
