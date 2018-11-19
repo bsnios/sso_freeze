@@ -33,7 +33,7 @@
 #jpl_id_type: majorbody
 #
 object_name: Uranus
-#filename: ./input_files/hrcf20847N001_evt2.fits
-filename: ./input_files/hrcf20846N001_evt2.fits
+filename: ./input_files/hrcf20847N001_evt2.fits
+#filename: ./input_files/hrcf20846N001_evt2.fits
 obj_id: 799
 jpl_id_type: majorbody

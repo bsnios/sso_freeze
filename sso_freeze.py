@@ -59,7 +59,7 @@ if __name__ == "__main__":
             w.wcs.crpix = [fitsfile[1].header['TCRPX8'], fitsfile[1].header['TCRPX9']]
             w.wcs.cdelt = [fitsfile[1].header['TCDLT8'], fitsfile[1].header['TCDLT9']]
 
-        if (instrument == 'EPN') or (instrument == 'MOS1') or (instrument == 'MOS2'):
+        if (instrument == 'EPN') or (instrument == 'EMOS1') or (instrument == 'EMOS2'):
             telescope = '500@-125989'
             w.wcs.ctype = [fitsfile[1].header['REFXCTYP'], fitsfile[1].header['REFYCTYP']]
             w.wcs.crval = [fitsfile[1].header['REFXCRVL'], fitsfile[1].header['REFYCRVL']]
