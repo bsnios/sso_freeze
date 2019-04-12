@@ -8,6 +8,7 @@
 import math                                     #required for trig functions
 import numpy as np                              #define arrays
 import operator                                 #subtract arrays
+import sys 			  							#import variables from command line
 from astropy.io import fits                     #input .fits files
 from astropy import wcs                         #convert to wcs coordinates
 from astroquery.jplhorizons import Horizons     #automatically download ephemermis 
@@ -15,21 +16,41 @@ from astropy.time import Time                   #convert between different time 
 from astropy.time import TimeDelta              #add/subtract time intervals 
 from scipy.interpolate import interp1d          #interpolate functions
 
+#Define input parameters
+input_file = ''
+object_name = '' 
+output_file = ''
+obj_id = '' 
+jpl_id_type = ''
+
+#Compiled target list of JPL targets, including required object IDs and target types
+#NOTE: This list is a work in progress and will continue to expand
+target_list = ['mercury','venus','earth','mars','io','europa','jupiter','saturn','neptune','pluto']
+obj_id_list = [199,299,399,499,501,502,599,699,799,899,999]
+jpl_id_type_list = ['majorbody','majorbody','majorbody','majorbody','majorbody','majorbody','majorbody','majorbody','majorbody']
+
+#Verify all required input parameters are included
+if len(sys.argv) != 4: 
+	print('\nPlease check input format: sso_freeze.py <input_file> <object_name> <output_file>\n')
+	quit()
+else: 
+	input_file = sys.argv[1]
+	object_name = sys.argv[2]
+	output_file = sys.argv[3]
+
+#Find the user-selected target from the list and update JPL parameters
+if object_name.lower() in (name for name in target_list):
+	obj_id = obj_id_list[target_list.index(object_name.lower())]
+	jpl_id_type = jpl_id_type_list[target_list.index(object_name.lower())]
+	print('\nObject recognized as "'+target_list[target_list.index(object_name.lower())]+'"')
+else: 
+	print('\nTarget not found. Please check spelling.\n')
+	quit()
+
 if __name__ == "__main__":
     
-    #Read inputs from separate file
-    inputs = {}
-    input_file = open("inputs.par")
-    input_data = input_file.readlines()
-    for line in input_data: 
-        #Parse input, assign values to variables
-        if not line.startswith('#'): 
-            key, value = line.split(":")
-            inputs[key.strip()] = value.strip()
-    input_file.close()
-
     #Read in fits file, including relevant header information
-    with fits.open(inputs['filename']) as fitsfile: 
+    with fits.open(input_file) as fitsfile: 
         header = fitsfile[1].header
         eventlist = fitsfile[1].data
         w = wcs.WCS(fitsfile[1].header)
@@ -45,26 +66,37 @@ if __name__ == "__main__":
 
         #Define telescope_id required for JPL-Horizons and wcs transformation keywords
         #required for wcs-to-pixel coordinate transformations, and vice versa 
+        print('Telescope configuration recognized as "'+instrument+'"\n')
         if instrument == 'ACIS': 
             telescope = '500@-151'
-            w.wcs.ctype = [fitsfile[1].header['TCTYP11'], fitsfile[1].header['TCTYP12']]
-            w.wcs.crval = [fitsfile[1].header['TCRVL11'], fitsfile[1].header['TCRVL12']]
-            w.wcs.crpix = [fitsfile[1].header['TCRPX11'], fitsfile[1].header['TCRPX12']]
-            w.wcs.cdelt = [fitsfile[1].header['TCDLT11'], fitsfile[1].header['TCDLT12']]
+            ctypex, ctypey = fitsfile[1].header['TCTYP11'], fitsfile[1].header['TCTYP12']
+            crvalx, crvaly = fitsfile[1].header['TCRVL11'], fitsfile[1].header['TCRVL12']
+            crpixx, crpixy = fitsfile[1].header['TCRPX11'], fitsfile[1].header['TCRPX12']
+            cdeltx, cdelty = fitsfile[1].header['TCDLT11'], fitsfile[1].header['TCDLT12']
  
-        if instrument == 'HRC': 
+        elif instrument == 'HRC': 
             telescope = '500@-151'
-            w.wcs.ctype = [fitsfile[1].header['TCTYP8'], fitsfile[1].header['TCTYP9']]
-            w.wcs.crval = [fitsfile[1].header['TCRVL8'], fitsfile[1].header['TCRVL9']]
-            w.wcs.crpix = [fitsfile[1].header['TCRPX8'], fitsfile[1].header['TCRPX9']]
-            w.wcs.cdelt = [fitsfile[1].header['TCDLT8'], fitsfile[1].header['TCDLT9']]
+            ctypex, ctypey = fitsfile[1].header['TCTYP8'], fitsfile[1].header['TCTYP9']
+            crvalx, crvaly = fitsfile[1].header['TCRVL8'], fitsfile[1].header['TCRVL9']
+            crpixx, crpixy = fitsfile[1].header['TCRPX8'], fitsfile[1].header['TCRPX9']
+            cdeltx, cdelty = fitsfile[1].header['TCDLT8'], fitsfile[1].header['TCDLT9']
 
-        if (instrument == 'EPN') or (instrument == 'EMOS1') or (instrument == 'EMOS2'):
+        elif (instrument == 'EPN') or (instrument == 'EMOS1') or (instrument == 'EMOS2'):
             telescope = '500@-125989'
-            w.wcs.ctype = [fitsfile[1].header['REFXCTYP'], fitsfile[1].header['REFYCTYP']]
-            w.wcs.crval = [fitsfile[1].header['REFXCRVL'], fitsfile[1].header['REFYCRVL']]
-            w.wcs.crpix = [fitsfile[1].header['REFXCRPX'], fitsfile[1].header['REFYCRPX']]
-            w.wcs.cdelt = [fitsfile[1].header['REFXCDLT'], fitsfile[1].header['REFYCDLT']]
+            ctypex, ctypey = fitsfile[1].header['REFXCTYP'], fitsfile[1].header['REFYCTYP']
+            crvalx, crvaly = fitsfile[1].header['REFXCRVL'], fitsfile[1].header['REFYCRVL']
+            crpixx, crpixy = fitsfile[1].header['REFXCRPX'], fitsfile[1].header['REFYCRPX']
+            cdeltx, cdelty = fitsfile[1].header['REFXCDLT'], fitsfile[1].header['REFYCDLT']
+
+        else: 
+            print('Telescope configuration not recognized. Please verify information is included in .fits file header\n')
+            quit()
+
+        #Input header keywords into wcs transformation matrix
+        w.wcs.ctype = [ctypex, ctypey]
+        w.wcs.crval = [crvalx, crvaly]
+        w.wcs.crpix = [crpixx, crpixy]
+        w.wcs.cdelt = [cdeltx, cdelty]
 
         #Define start and stop times for ephemeris data; since jpl does not accept seconds, 
         #all times are in YY:MM:DD hh:mm format;dt is added to stop time to ensure ephemeris 
@@ -72,7 +104,7 @@ if __name__ == "__main__":
         eph_tstart = Time(tstart, out_subfmt='date_hm')
         dt = TimeDelta(0.125, format='jd') 
         eph_tstop = Time(tstop + dt, out_subfmt='date_hm')
-        obj = Horizons(id=inputs['obj_id'],location=telescope,epochs={'start':eph_tstart.iso, 'stop':eph_tstop.iso, 'step':'5m'}, id_type=inputs['jpl_id_type'])
+        obj = Horizons(id=obj_id,location=telescope,epochs={'start':eph_tstart.iso, 'stop':eph_tstop.iso, 'step':'5m'}, id_type=jpl_id_type)
         eph = obj.ephemerides()
         
         #Create interpolation function for RA and DEC based on ephemeris data
@@ -86,7 +118,7 @@ if __name__ == "__main__":
 
         #Output starting time, RA, and DEC
         print('Start time: ', t0.iso) 
-        print('Starting position for target: ', ra0, dec0)
+        print('Starting R.A., Decl. for target: ', ra0, dec0,'\n')
 
         #Convert event list x,y coordinates to RA,DEC is pix2world transformation
         cnt_ra, cnt_dec = w.wcs_pix2world(eventlist['x'], eventlist['y'], 1)
@@ -105,7 +137,19 @@ if __name__ == "__main__":
         cnt_dec[:] = [x + dec0 for x in cnt_dec]
 
         #Convert corrected RA,DEC to pixel coordinates and output to fits file
-        eventlist['x'], eventlist['y'] = w.wcs_world2pix(cnt_ra,cnt_dec, 1)
+        #eventlist['x'], eventlist['y'] = w.wcs_world2pix(cnt_ra,cnt_dec, 1)
+        ocx, ocy = w.wcs_world2pix(cnt_ra,cnt_dec, 1)
+        ocx_col = fits.Column(name='ocx', format='1E', unit='pixel', coord_type=ctypex, coord_unit='deg', coord_ref_point=crpixx, coord_ref_value=crvalx, coord_inc=cdeltx, array=ocx)
+        ocy_col = fits.Column(name='ocy', format='1E', unit='pixel', coord_type=ctypey, coord_unit='deg', coord_ref_point=crpixy, coord_ref_value=crvaly, coord_inc=cdelty, array=ocy)
+
+        #update fits table information with new object-centered coordinate columns
+        table = fitsfile["EVENTS"]
+        newtable = fits.BinTableHDU.from_columns(table.columns + fits.ColDefs([ocx_col]) + fits.ColDefs([ocy_col]))
+        fitsfile["EVENTS"].data = newtable.data
+        fitsfile["EVENTS"].header.update(newtable.header)
+
+        #output fits file
+        fitsfile.writeto(output_file+'.fits')
 
         #Calculate angular radius, North pole angle, and North pole distance 
         #of solar system object based on JPL data
@@ -119,7 +163,7 @@ if __name__ == "__main__":
 
         #Write region file that contains location of solar system object, average size
         #of object, and north pole location
-        region_file = open(inputs['object_name']+'.reg','w') 
+        region_file = open(output_file+'.reg','w') 
         region_file.write('# Region file format: DS9 version 4.1\nglobal color=green dashlist=8 3 width=1 font="helvetica 10 normal roman" select=1 highlite=1 dash=0 fixed=0 edit=1 move=1 delete=1 include=1 source=1\nfk5\n')
         region_file.write('circle('+str(ra0)+','+str(dec0)+','+str(ang_radius)+'")\n')
         region_file.write('line('+str(ra0)+','+str(dec0)+','+str(ra_pole)+','+str(dec_pole)+')')
@@ -129,5 +173,4 @@ if __name__ == "__main__":
             region_file.write('# line=0 0 color=magenta')
         region_file.close()
         
-        #Read out fits file
-        fitsfile.writeto(inputs['object_name']+'.fits') 
+
