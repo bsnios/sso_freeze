@@ -17,11 +17,13 @@ from astropy.time import TimeDelta              #add/subtract time intervals
 from scipy.interpolate import interp1d          #interpolate functions
 
 #Define input parameters
-parser = argparse.ArgumentParser(description='Generate fits images in object-centered \
+parser = argparse.ArgumentParser(description='Modifies a .fits image into object-centered \
     x and y (ocx,ocy) coordinates. Default behavior is to generate new coordinate columns \
     in the fits file.')
-parser.add_argument("-o", "--overwrite", action="store_true", help='Overwrite object-centered results \
-    to default x and y columns in fits file')
+parser.add_argument("-o", "--overwrite", action="store_true", help="Overwrite default x and y columns \
+    of .fits file with object-centered results")
+parser.add_argument("-r", "--region", action="store_true", help="Outputs a region file that \
+    approximately maps the target's diameter, polar angle, and polar orientation")
 parser.add_argument('input', type=str, help='Input file')
 parser.add_argument('obj_name', type=str, help='Object name')
 parser.add_argument('output', type=str, help='Output file')
@@ -155,27 +157,29 @@ if __name__ == "__main__":
         #output fits file
         fitsfile.writeto(output_file+'.fits')
 
-        #Calculate angular radius, North pole angle, and North pole distance 
-        #of solar system object based on JPL data
-        ang_radius = 0.5*sum(eph['ang_width'])/len(eph['ang_width'])
-        NPole_ang = sum(eph['NPole_ang'])/len(eph['NPole_ang'])
-        NPole_dist = sum(eph['NPole_dist'])/len(eph['NPole_dist'])
-        
-        #Convert North Pole location to RA/DEC coordinates
-        ra_pole = ra0 + (1/3600)*abs(NPole_dist)*math.sin(NPole_ang*math.pi/180)
-        dec_pole = dec0 + (1/3600)*abs(NPole_dist)*math.cos(NPole_ang*math.pi/180)
 
-        #Write region file that contains location of solar system object, average size
-        #of object, and north pole location
-        region_file = open(output_file+'.reg','w') 
-        region_file.write('# Region file format: DS9 version 4.1\nglobal color=green dashlist=8 3 width=1 font="helvetica 10 normal roman" \
-            select=1 highlite=1 dash=0 fixed=0 edit=1 move=1 delete=1 include=1 source=1\nfk5\n')
-        region_file.write('circle('+str(ra0)+','+str(dec0)+','+str(ang_radius)+'")\n')
-        region_file.write('line('+str(ra0)+','+str(dec0)+','+str(ra_pole)+','+str(dec_pole)+')')
-        #If the North is on the opposite side of the object, the North Pole marker is highlighted magenta
-        #rather than green 
-        if NPole_dist < 0: 
-            region_file.write('# line=0 0 color=magenta')
-        region_file.close()
+        if args.region: 
+            #Calculate angular radius, North pole angle, and North pole distance 
+            #of solar system object based on JPL data
+            ang_radius = 0.5*sum(eph['ang_width'])/len(eph['ang_width'])
+            NPole_ang = sum(eph['NPole_ang'])/len(eph['NPole_ang'])
+            NPole_dist = sum(eph['NPole_dist'])/len(eph['NPole_dist'])
+            
+            #Convert North Pole location to RA/DEC coordinates
+            ra_pole = ra0 + (1/3600)*abs(NPole_dist)*math.sin(NPole_ang*math.pi/180)
+            dec_pole = dec0 + (1/3600)*abs(NPole_dist)*math.cos(NPole_ang*math.pi/180)
+
+            #Write region file that contains location of solar system object, average size
+            #of object, and north pole location
+            region_file = open(output_file+'.reg','w') 
+            region_file.write('# Region file format: DS9 version 4.1\nglobal color=green dashlist=8 3 width=1 font="helvetica 10 normal roman" \
+                select=1 highlite=1 dash=0 fixed=0 edit=1 move=1 delete=1 include=1 source=1\nfk5\n')
+            region_file.write('circle('+str(ra0)+','+str(dec0)+','+str(ang_radius)+'")\n')
+            region_file.write('line('+str(ra0)+','+str(dec0)+','+str(ra_pole)+','+str(dec_pole)+')')
+            #If the North is on the opposite side of the object, the North Pole marker is highlighted magenta
+            #rather than green 
+            if NPole_dist < 0: 
+                region_file.write('# line=0 0 color=magenta')
+            region_file.close()
         
 
