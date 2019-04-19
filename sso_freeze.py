@@ -32,7 +32,7 @@ jpl_id_type_list = ['majorbody','majorbody','majorbody','majorbody','majorbody',
 #Verify all required input parameters are included
 if len(sys.argv) != 4: 
 	print('\nPlease check input format: sso_freeze.py <input_file> <object_name> <output_file>\n')
-	quit()
+	sys.exit()
 else: 
 	input_file = sys.argv[1]
 	object_name = sys.argv[2]
@@ -45,7 +45,7 @@ if object_name.lower() in (name for name in target_list):
 	print('\nObject recognized as "'+target_list[target_list.index(object_name.lower())]+'"')
 else: 
 	print('\nTarget not found. Please check spelling.\n')
-	quit()
+	sys.exit()
 
 if __name__ == "__main__":
     
@@ -90,7 +90,7 @@ if __name__ == "__main__":
 
         else: 
             print('Telescope configuration not recognized. Please verify information is included in .fits file header\n')
-            quit()
+            sys.exit()
 
         #Input header keywords into wcs transformation matrix
         w.wcs.ctype = [ctypex, ctypey]
