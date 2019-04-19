@@ -2,9 +2,9 @@
 
 #sso_freeze python utility 
 #by Brad Snios - 11/14/18
-#
 #Compiled to run on python 3+
 
+import argparse
 import math                                     #required for trig functions
 import numpy as np                              #define arrays
 import operator                                 #subtract arrays
@@ -17,11 +17,19 @@ from astropy.time import TimeDelta              #add/subtract time intervals
 from scipy.interpolate import interp1d          #interpolate functions
 
 #Define input parameters
-input_file = ''
-object_name = '' 
-output_file = ''
-obj_id = '' 
-jpl_id_type = ''
+parser = argparse.ArgumentParser(description='Generate fits images in object-centered \
+    x and y (ocx,ocy) coordinates. Default behavior is to generate new coordinate columns \
+    in the fits file.')
+parser.add_argument("-o", "--overwrite", action="store_true", help='Overwrite object-centered results \
+    to default x and y columns in fits file')
+parser.add_argument('input', type=str, help='Input file')
+parser.add_argument('obj_name', type=str, help='Object name')
+parser.add_argument('output', type=str, help='Output file')
+args = parser.parse_args()
+
+input_file = args.input
+object_name = args.obj_name
+output_file = args.output
 
 #Compiled target list of JPL targets, including required object IDs and target types
 #NOTE: This list is a work in progress and will continue to expand
@@ -29,16 +37,9 @@ target_list = ['mercury','venus','earth','mars','io','europa','jupiter','saturn'
 obj_id_list = [199,299,399,499,501,502,599,699,799,899,999]
 jpl_id_type_list = ['majorbody','majorbody','majorbody','majorbody','majorbody','majorbody','majorbody','majorbody','majorbody']
 
-#Verify all required input parameters are included
-if len(sys.argv) != 4: 
-	print('\nPlease check input format: sso_freeze.py <input_file> <object_name> <output_file>\n')
-	sys.exit()
-else: 
-	input_file = sys.argv[1]
-	object_name = sys.argv[2]
-	output_file = sys.argv[3]
-
 #Find the user-selected target from the list and update JPL parameters
+obj_id = '' 
+jpl_id_type = ''
 if object_name.lower() in (name for name in target_list):
 	obj_id = obj_id_list[target_list.index(object_name.lower())]
 	jpl_id_type = jpl_id_type_list[target_list.index(object_name.lower())]
@@ -136,17 +137,20 @@ if __name__ == "__main__":
         cnt_ra[:] = [x + ra0 for x in cnt_ra]
         cnt_dec[:] = [x + dec0 for x in cnt_dec]
 
-        #Convert corrected RA,DEC to pixel coordinates and output to fits file
-        #eventlist['x'], eventlist['y'] = w.wcs_world2pix(cnt_ra,cnt_dec, 1)
-        ocx, ocy = w.wcs_world2pix(cnt_ra,cnt_dec, 1)
-        ocx_col = fits.Column(name='ocx', format='1E', unit='pixel', coord_type=ctypex, coord_unit='deg', coord_ref_point=crpixx, coord_ref_value=crvalx, coord_inc=cdeltx, array=ocx)
-        ocy_col = fits.Column(name='ocy', format='1E', unit='pixel', coord_type=ctypey, coord_unit='deg', coord_ref_point=crpixy, coord_ref_value=crvaly, coord_inc=cdelty, array=ocy)
+        #Convert corrected RA,DEC to pixel coordinates and output to fits 
+        if args.overwrite: 
+            eventlist['x'], eventlist['y'] = w.wcs_world2pix(cnt_ra,cnt_dec, 1)
 
-        #update fits table information with new object-centered coordinate columns
-        table = fitsfile["EVENTS"]
-        newtable = fits.BinTableHDU.from_columns(table.columns + fits.ColDefs([ocx_col]) + fits.ColDefs([ocy_col]))
-        fitsfile["EVENTS"].data = newtable.data
-        fitsfile["EVENTS"].header.update(newtable.header)
+        else:
+            ocx, ocy = w.wcs_world2pix(cnt_ra,cnt_dec, 1)
+            ocx_col = fits.Column(name='ocx', format='1E', unit='pixel', coord_type=ctypex, coord_unit='deg', coord_ref_point=crpixx, coord_ref_value=crvalx, coord_inc=cdeltx, array=ocx)
+            ocy_col = fits.Column(name='ocy', format='1E', unit='pixel', coord_type=ctypey, coord_unit='deg', coord_ref_point=crpixy, coord_ref_value=crvaly, coord_inc=cdelty, array=ocy)
+
+            #update fits table information with new object-centered coordinate columns
+            table = fitsfile["EVENTS"]
+            newtable = fits.BinTableHDU.from_columns(table.columns + fits.ColDefs([ocx_col]) + fits.ColDefs([ocy_col]))
+            fitsfile["EVENTS"].data = newtable.data
+            fitsfile["EVENTS"].header.update(newtable.header)
 
         #output fits file
         fitsfile.writeto(output_file+'.fits')
@@ -164,7 +168,8 @@ if __name__ == "__main__":
         #Write region file that contains location of solar system object, average size
         #of object, and north pole location
         region_file = open(output_file+'.reg','w') 
-        region_file.write('# Region file format: DS9 version 4.1\nglobal color=green dashlist=8 3 width=1 font="helvetica 10 normal roman" select=1 highlite=1 dash=0 fixed=0 edit=1 move=1 delete=1 include=1 source=1\nfk5\n')
+        region_file.write('# Region file format: DS9 version 4.1\nglobal color=green dashlist=8 3 width=1 font="helvetica 10 normal roman" \
+            select=1 highlite=1 dash=0 fixed=0 edit=1 move=1 delete=1 include=1 source=1\nfk5\n')
         region_file.write('circle('+str(ra0)+','+str(dec0)+','+str(ang_radius)+'")\n')
         region_file.write('line('+str(ra0)+','+str(dec0)+','+str(ra_pole)+','+str(dec_pole)+')')
         #If the North is on the opposite side of the object, the North Pole marker is highlighted magenta
