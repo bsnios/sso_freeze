@@ -16,6 +16,9 @@ from astropy.time import Time                   #convert between different time 
 from astropy.time import TimeDelta              #add/subtract time intervals 
 from scipy.interpolate import interp1d          #interpolate functions
 
+#Supress the majority of traceback errors. Comment out if debugging. 
+sys.traceback=0
+
 #Define input parameters
 parser = argparse.ArgumentParser(description='Modifies a .fits image into object-centered \
     x and y (ocx,ocy) coordinates. Default behavior is to generate new coordinate columns \
@@ -39,16 +42,20 @@ target_list = ['mercury','venus','earth','mars','io','europa','jupiter','saturn'
 obj_id_list = [199,299,399,499,501,502,599,699,799,899,999]
 jpl_id_type_list = ['majorbody','majorbody','majorbody','majorbody','majorbody','majorbody','majorbody','majorbody','majorbody']
 
-#Find the user-selected target from the list and update JPL parameters
+#Find the user-selected target from the list and update JPL parameters. 
+#If target is not found in the list, then the user-provided name is passed to
+#JPL Horizons. In most cases, JPL will return a list of target candidates. 
 obj_id = '' 
 jpl_id_type = ''
+name_flag = 0 
 if object_name.lower() in (name for name in target_list):
 	obj_id = obj_id_list[target_list.index(object_name.lower())]
 	jpl_id_type = jpl_id_type_list[target_list.index(object_name.lower())]
 	print('\nObject recognized as "'+target_list[target_list.index(object_name.lower())]+'"')
 else: 
-	print('\nTarget not found. Please check spelling.\n')
-	sys.exit()
+    obj_id = object_name.lower()
+    jpl_id_type = ''
+    name_flag = 1 
 
 if __name__ == "__main__":
     
@@ -79,10 +86,17 @@ if __name__ == "__main__":
  
         elif instrument == 'HRC': 
             telescope = '500@-151'
-            ctypex, ctypey = fitsfile[1].header['TCTYP8'], fitsfile[1].header['TCTYP9']
-            crvalx, crvaly = fitsfile[1].header['TCRVL8'], fitsfile[1].header['TCRVL9']
-            crpixx, crpixy = fitsfile[1].header['TCRPX8'], fitsfile[1].header['TCRPX9']
-            cdeltx, cdelty = fitsfile[1].header['TCDLT8'], fitsfile[1].header['TCDLT9']
+            #ctypex, ctypey = fitsfile[1].header['TCTYP8'], fitsfile[1].header['TCTYP9']
+            #crvalx, crvaly = fitsfile[1].header['TCRVL8'], fitsfile[1].header['TCRVL9']
+            #crpixx, crpixy = fitsfile[1].header['TCRPX8'], fitsfile[1].header['TCRPX9']
+            #cdeltx, cdelty = fitsfile[1].header['TCDLT8'], fitsfile[1].header['TCDLT9']
+
+            #In rare cases, Chandra will use the following header keywords for HRC. 
+            #If the default code is not running correctly, uncomment these lines.
+            ctypex, ctypey = fitsfile[1].header['TCTYP19'], fitsfile[1].header['TCTYP20']
+            crvalx, crvaly = fitsfile[1].header['TCRVL19'], fitsfile[1].header['TCRVL20']
+            crpixx, crpixy = fitsfile[1].header['TCRPX19'], fitsfile[1].header['TCRPX20']
+            cdeltx, cdelty = fitsfile[1].header['TCDLT19'], fitsfile[1].header['TCDLT20']
 
         elif (instrument == 'EPN') or (instrument == 'EMOS1') or (instrument == 'EMOS2'):
             telescope = '500@-125989'
@@ -107,8 +121,14 @@ if __name__ == "__main__":
         eph_tstart = Time(tstart, out_subfmt='date_hm')
         dt = TimeDelta(0.125, format='jd') 
         eph_tstop = Time(tstop + dt, out_subfmt='date_hm')
-        obj = Horizons(id=obj_id,location=telescope,epochs={'start':eph_tstart.iso, 'stop':eph_tstop.iso, 'step':'5m'}, id_type=jpl_id_type)
-        eph = obj.ephemerides()
+
+        if name_flag == 0:
+            obj = Horizons(id=obj_id,location=telescope,epochs={'start':eph_tstart.iso, 'stop':eph_tstop.iso, 'step':'5m'},id_type=jpl_id_type)
+            eph = obj.ephemerides()
+        if name_flag == 1: 
+            obj = Horizons(id=obj_id,location=telescope,epochs={'start':eph_tstart.iso, 'stop':eph_tstop.iso, 'step':'5m'})
+            eph = obj.ephemerides()
+
         
         #Create interpolation function for RA and DEC based on ephemeris data
         ra_int = interp1d(eph['datetime_jd'], eph['RA'], kind='cubic')
